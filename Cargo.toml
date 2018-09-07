@@ -1,0 +1,9 @@
+[package]
+name        = "nixcfg"
+description = "Command line utility to query and modify .nix files."
+version     = "0.1.0"
+authors     = ["Grégoire Geis <git@gregoirege.is>"]
+
+[dependencies]
+rnix      = "0.4"
+structopt = "0.2"
