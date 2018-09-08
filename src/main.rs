@@ -2,7 +2,7 @@ extern crate rnix;
 extern crate structopt;
 
 use std::fmt::Write as FmtWrite;
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{stdin, Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 
 use rnix::tokenizer::TokenKind;
@@ -48,9 +48,13 @@ pub enum Command {
         #[structopt(name = "path")]
         path: String,
 
-        /// The new value.
+        /// The new value. If not specified, it will be read from stdin.
         #[structopt(name = "value")]
-        value: String
+        value: Option<String>,
+
+        /// Do not strip last new-line character from input.
+        #[structopt(short = "n", long = "keep-eol")]
+        keep_eol: bool
     }
 }
 
@@ -79,8 +83,6 @@ fn run(args: Args) -> Result<(), String> {
     // Parse file contents
     let ast = rnix::parse(&content)
         .map_err(|err| format!("Unable to parse input file: {}.", err))?;
-    
-    println!("{:?}", ast);
 
     // Process file
     process(ast, command, &mut content)?;
@@ -92,8 +94,14 @@ fn run(args: Args) -> Result<(), String> {
         
         write!(file, "{}", content);
 
-        file.set_len(content.len() as _)
-            .map_err(|err| format!("Unable to resize input file after writing in-place: {}.", err))?;
+        // Resize file if needed
+        let file_metadata = file.metadata()
+                                .map_err(|err| format!("Unable to get output file metadata: {}.", err))?;
+
+        if content.len() < file_metadata.len() as _ {
+            file.set_len(content.len() as _)
+                .map_err(|err| format!("Unable to resize input file after writing in-place: {}.", err))?;
+        }
     } else {
         println!("{}", content);
     }
@@ -131,9 +139,28 @@ fn process(mut ast: AST, command: Command, content: &mut String) -> Result<(), S
             }
         },
 
-        Command::Set { path, value } => {
+        Command::Set { path, value, keep_eol } => {
+            let value = match value {
+                Some(value) => value,
+                None => {
+                    let mut input = String::new();
+
+                    stdin().read_to_string(&mut input)
+                           .map_err(|err| format!("Could not read replacement value from stdin: {}.", err))?;
+                    
+                    let input_len = input.len();
+                    
+                    if !keep_eol && input.ends_with('\n') {
+                        let new_len = input_len - (if input.ends_with("\r\n") { 2 } else { 1 });
+
+                        input.truncate(new_len);
+                    }
+                    
+                    input
+                }
+            };
             let parts: Vec<_> = path.split('.').collect();
-            
+
             match find_node(&ast, root, &parts, 0) {
                 Ok(node) => {
                     // We found a match, and we have to replace it
