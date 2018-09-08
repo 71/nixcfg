@@ -148,6 +148,7 @@ fn process(mut ast: AST, command: Command, content: &mut String) -> Result<(), S
                     stdin().read_to_string(&mut input)
                            .map_err(|err| format!("Could not read replacement value from stdin: {}.", err))?;
                     
+                    // Trim end of line (unless the user asked us to keep it)
                     let input_len = input.len();
                     
                     if !keep_eol && input.ends_with('\n') {
