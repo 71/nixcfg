@@ -1,8 +1,13 @@
 [package]
 name        = "nixcfg"
-description = "Command line utility to query and modify .nix files."
 version     = "0.2.0"
+description = "Command line utility to query and modify .nix files."
 authors     = ["Grégoire Geis <git@gregoirege.is>"]
+
+homepage    = "https://github.com/6A/nixcfg"
+repository  = "https://github.com/6A/nixcfg"
+readme      = "README.md"
+license     = "MIT"
 
 [dependencies]
 rnix      = "0.4"
