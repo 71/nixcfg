@@ -1,5 +1,6 @@
 nixcfg
 ======
+![Crates.io](https://img.shields.io/crates/v/nixcfg.svg)
 
 Command line utility to query and modify .nix files.
 
